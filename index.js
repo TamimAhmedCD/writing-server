@@ -27,13 +27,20 @@ async function run() {
 
     // Blog Collection
     const blogCollection = client.db("blogDb").collection("blog");
+    
+    // get all Blog api
+    app.get("/blog", async (req, res) => {
+      const cursor = blogCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     // Blog post api
-    app.post('/blog', async(req, res) =>{
-      const newBlog = req.body
-      const result = blogCollection.insertOne(newBlog)
-      res.send(result)
-    })
+    app.post("/blog", async (req, res) => {
+      const newBlog = req.body;
+      const result = blogCollection.insertOne(newBlog);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
