@@ -27,12 +27,22 @@ async function run() {
 
     // Blog Collection
     const blogCollection = client.db("blogDb").collection("blog");
-    
+
     // get all Blog api
     app.get("/blog", async (req, res) => {
       const cursor = blogCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    // get recent Blog post api
+    app.get("/recentBlog", async (req, res) => {
+      const recentBlog = await blogCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray();
+        res.send(recentBlog)
     });
 
     // Blog post api
