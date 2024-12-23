@@ -69,22 +69,43 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/categories", async (req, res) => {
+      try {
+        // Use aggregation to fetch distinct categories
+        const categories = await blogCollection.aggregate([
+          { $group: { _id: "$category" } }
+        ]).toArray();
+    
+        // Extract categories from the aggregation result
+        const categoryList = categories.map(item => item._id);
+    
+        if (categoryList.length === 0) {
+          return res.status(404).send({ message: "No categories found" });
+        }
+    
+        res.send(categoryList);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        res.status(500).send({ message: "Error fetching categories", error: error.message });
+      }
+    });
+     
+
     // get blog using category
     app.get("/blogCategory", async (req, res) => {
-      const category = req.query.category; // Retrieve the category from the query string
-      
+      const category = req.query.category;
+
       let query = {};
-    
+
       if (category) {
-        query = { category: category }; // Filter blogs based on category
+        query = { category: category };
       }
-    
-      const cursor = blogCollection.find(query); // Execute the query on the blog collection
-      const result = await cursor.toArray(); // Convert the result to an array
-    
-      res.send(result); // Send the filtered data as a response
+
+      const cursor = blogCollection.find(query);
+      const result = await cursor.toArray();
+
+      res.send(result);
     });
-    
 
     // Blog post api
     app.post("/blog", async (req, res) => {
