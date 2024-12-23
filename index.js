@@ -42,8 +42,30 @@ async function run() {
         .sort({ createdAt: -1 })
         .limit(6)
         .toArray();
-        res.send(recentBlog)
+      res.send(recentBlog);
     });
+
+    // get blog using id
+    app.get("/blog/:id", async (req, res) => {
+      const { id } = req.params;  // Get the blog ID from the URL parameter
+    
+      try {
+        // Convert the string ID to ObjectId type
+        const objectId = new ObjectId(id);
+    
+        // Find the blog by ID
+        const blog = await blogCollection.findOne({ _id: objectId });
+    
+        if (blog) {
+          res.send(blog);  // Send the blog data if found
+        } else {
+          res.status(404).send({ error: "Blog not found" });  // If no blog found
+        }
+      } catch (error) {
+        console.error("Error fetching blog by ID:", error);
+        res.status(500).send({ error: "Failed to fetch blog" });
+      }
+    });   
 
     // Blog post api
     app.post("/blog", async (req, res) => {
