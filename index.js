@@ -69,6 +69,23 @@ async function run() {
       res.send(result);
     });
 
+    // get blog using category
+    app.get("/blogCategory", async (req, res) => {
+      const category = req.query.category; // Retrieve the category from the query string
+      
+      let query = {};
+    
+      if (category) {
+        query = { category: category }; // Filter blogs based on category
+      }
+    
+      const cursor = blogCollection.find(query); // Execute the query on the blog collection
+      const result = await cursor.toArray(); // Convert the result to an array
+    
+      res.send(result); // Send the filtered data as a response
+    });
+    
+
     // Blog post api
     app.post("/blog", async (req, res) => {
       const newBlog = req.body;
