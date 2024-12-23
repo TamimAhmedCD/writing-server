@@ -148,6 +148,13 @@ async function run() {
       res.send(result);
     });
 
+    // Blog post api
+    app.post("/wishlist", async (req, res) => {
+      const newWishlist = req.body;
+      const result = wishListCollection.insertOne(newWishlist);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
