@@ -27,11 +27,19 @@ async function run() {
 
     // Blog Collection
     const blogCollection = client.db("blogDb").collection("blog");
+    const wishListCollection = client.db("blogDb").collection("wish-list");
 
     // get all Blog api
     app.get("/blog", async (req, res) => {
       const cursor = blogCollection.find();
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // Blog post api
+    app.post("/blog", async (req, res) => {
+      const newBlog = req.body;
+      const result = blogCollection.insertOne(newBlog);
       res.send(result);
     });
 
@@ -69,6 +77,7 @@ async function run() {
       res.send(result);
     });
 
+    // get all categories
     app.get("/categories", async (req, res) => {
       try {
         // Use aggregation to fetch distinct categories
@@ -132,10 +141,10 @@ async function run() {
       }
     });
 
-    // Blog post api
-    app.post("/blog", async (req, res) => {
-      const newBlog = req.body;
-      const result = blogCollection.insertOne(newBlog);
+    // get all wishlist api
+    app.get("/wishlist", async (req, res) => {
+      const cursor = wishListCollection.find();
+      const result = await cursor.toArray();
       res.send(result);
     });
 
