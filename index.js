@@ -72,24 +72,25 @@ async function run() {
     app.get("/categories", async (req, res) => {
       try {
         // Use aggregation to fetch distinct categories
-        const categories = await blogCollection.aggregate([
-          { $group: { _id: "$category" } }
-        ]).toArray();
-    
+        const categories = await blogCollection
+          .aggregate([{ $group: { _id: "$category" } }])
+          .toArray();
+
         // Extract categories from the aggregation result
-        const categoryList = categories.map(item => item._id);
-    
+        const categoryList = categories.map((item) => item._id);
+
         if (categoryList.length === 0) {
           return res.status(404).send({ message: "No categories found" });
         }
-    
+
         res.send(categoryList);
       } catch (error) {
         console.error("Error fetching categories:", error);
-        res.status(500).send({ message: "Error fetching categories", error: error.message });
+        res
+          .status(500)
+          .send({ message: "Error fetching categories", error: error.message });
       }
     });
-     
 
     // get blog using category
     app.get("/blogCategory", async (req, res) => {
@@ -105,6 +106,30 @@ async function run() {
       const result = await cursor.toArray();
 
       res.send(result);
+    });
+
+    // get blog by search
+    app.get("/search", async (req, res) => {
+      const searchQuery = req.query.q;
+
+      try {
+        // Perform a search query on the collection
+        const blogsCursor = await blogCollection.find({
+          $or: [
+            { blogTitle: { $regex: searchQuery, $options: "i" } },
+            { longDes: { $regex: searchQuery, $options: "i" } },
+          ],
+        });
+
+        // Convert the cursor to an array
+        const blogs = await blogsCursor.toArray();
+
+        // Send the result as a JSON response
+        res.json(blogs);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        res.status(500).json({ message: "Server Error" });
+      }
     });
 
     // Blog post api
