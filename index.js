@@ -23,7 +23,6 @@ app.use(cookieParser());
 
 // verify Token
 const verifyToken = (req, res, next) => {
-  console.log("inside the verify token", req.cookies);
   const token = req?.cookies?.token;
 
   if (!token) {
@@ -88,7 +87,6 @@ async function run() {
 
     // get all Blog api
     app.get("/blog", async (req, res) => {
-      console.log("inside the api callback");
       const cursor = blogCollection.find();
       const result = await cursor.toArray();
       res.send(result);
