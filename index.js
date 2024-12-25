@@ -1,13 +1,43 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://writing-tamim.web.app",
+      "https://writing-tamim.firebaseapp.com",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
+
+// verify Token
+const verifyToken = (req, res, next) => {
+  console.log("inside the verify token", req.cookies);
+  const token = req?.cookies?.token;
+
+  if (!token) {
+    return res.status(401).sen({ message: "Unauthorized Access" });
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+    if (error) {
+      return res.status(401).send({ message: "Unauthorized Access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.k9pcb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -29,6 +59,32 @@ async function run() {
     const blogCollection = client.db("blogDb").collection("blog");
     const wishListCollection = client.db("blogDb").collection("wish-list");
     const commentCollection = client.db("blogDb").collection("comment");
+
+    // JWT auth api
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "5h",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
+    // JWT logout api
+    app.post("/logout", (req, res) => {
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
 
     // get all Blog api
     app.get("/blog", async (req, res) => {
@@ -167,11 +223,13 @@ async function run() {
     });
 
     // get all wishlist api
-    app.get("/wishlist", async (req, res) => {
+    app.get("/wishlist", verifyToken, async (req, res) => {
       const email = req.query.email;
-      const wishlist = await wishListCollection
-        .find({ userEmail: email })
-        .toArray();
+      const query = { userEmail: email };
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      const wishlist = await wishListCollection.find(query).toArray();
       res.send(wishlist);
     });
 
@@ -212,10 +270,10 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
