@@ -74,6 +74,14 @@ async function run() {
         .send({ success: true });
     });
 
+    app.post('/logout', (req, res) => {
+      res.clearCookie('token', {
+        httpOnly: true,
+        secure: false
+      })
+      .send({success: true})
+    })
+
     // get all Blog api
     app.get("/blog", logger, async (req, res) => {
       console.log("inside the api callback");
