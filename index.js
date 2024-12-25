@@ -10,7 +10,11 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://writing-tamim.web.app",
+      "https://writing-tamim.firebaseapp.com/",
+    ],
     credentials: true,
   })
 );
@@ -74,13 +78,14 @@ async function run() {
         .send({ success: true });
     });
 
-    app.post('/logout', (req, res) => {
-      res.clearCookie('token', {
-        httpOnly: true,
-        secure: false
-      })
-      .send({success: true})
-    })
+    app.post("/logout", (req, res) => {
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({ success: true });
+    });
 
     // get all Blog api
     app.get("/blog", logger, async (req, res) => {
