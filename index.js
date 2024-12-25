@@ -23,11 +23,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     // Blog Collection
     const blogCollection = client.db("blogDb").collection("blog");
     const wishListCollection = client.db("blogDb").collection("wish-list");
+    const commentCollection = client.db("blogDb").collection("comment");
 
     // get all Blog api
     app.get("/blog", async (req, res) => {
@@ -141,17 +142,70 @@ async function run() {
       }
     });
 
+    // features blog
+    app.get("/feature-blogs", async (req, res) => {
+      const featuresBlog = await blogCollection.aggregate([
+        {
+          $addFields: {
+            wordCount: {
+              $cond: {
+                if: { $ifNull: ["$longDes", false] },
+                then: { $size: { $split: ["$longDes", " "] } }, // Split by space for word count
+                else: 0,
+              },
+            },
+          },
+        },
+        { $sort: { wordCount: -1 } },
+        { $limit: 10 },
+      ])
+      .toArray();
+    
+      res.send(featuresBlog);
+    });    
+
     // get all wishlist api
     app.get("/wishlist", async (req, res) => {
-      const cursor = wishListCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
+      const email = req.query.email;
+      const wishlist = await wishListCollection
+        .find({ userEmail: email })
+        .toArray();
+      res.send(wishlist);
     });
 
-    // Blog post api
+    // wishlist post api
     app.post("/wishlist", async (req, res) => {
       const newWishlist = req.body;
       const result = wishListCollection.insertOne(newWishlist);
+      res.send(result);
+    });
+
+    // Delete a wishlist item by blogId
+    app.delete("/wishlist", async (req, res) => {
+      const { userEmail, blogId } = req.body; // Expect userEmail and blogId in the request body
+
+      const result = await wishListCollection.deleteOne({
+        userEmail: userEmail,
+        blogId: blogId, // Delete item based on blogId and userEmail
+      });
+
+      res.send(result);
+    });
+
+    // get comments api
+    app.get("/comments/:blogId", async (req, res) => {
+      const blogId = req.params.blogId;
+      const comment = await commentCollection
+        .find({ blogId: blogId })
+        .sort({ createdAt: -1 })
+        .toArray();
+      res.send(comment);
+    });
+
+    // post comments
+    app.post("/comments", async (req, res) => {
+      const newComment = req.body;
+      const result = await commentCollection.insertOne(newComment);
       res.send(result);
     });
 
