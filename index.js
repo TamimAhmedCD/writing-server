@@ -119,6 +119,26 @@ async function run() {
       res.send(result);
     });
 
+    // update blog
+    app.put("/blog/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedBlog = req.body;
+      const blog = {
+        $set: {
+          blogTitle: updatedBlog.blogTitle,
+          category: updatedBlog.category,
+          addTags: updatedBlog.addTags,
+          shortDes: updatedBlog.shortDes,
+          longDes: updatedBlog.longDes,
+          blogImg: updatedBlog.blogImg,
+        },
+      };
+      const result = await blogCollection.updateOne(filter, blog, options);
+      res.send(result);
+    });
+
     // get blog using userEmail
     app.get("/blogs", async (req, res) => {
       const email = req.query.email;
